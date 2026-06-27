@@ -172,6 +172,24 @@
   }
   .event-month-label .num { font-size: 30px; }
   .event-section { margin-bottom: 2.5rem; }
+  .event-typetabs { display: flex; gap: 2px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--hairline); }
+  .event-typetab-btn {
+    background: none; border: none; cursor: pointer;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px; letter-spacing: 0.05em;
+    color: var(--text-muted);
+    padding: 10px 20px 12px;
+    position: relative;
+    transition: color .2s;
+  }
+  .event-typetab-btn.active { color: var(--gold); }
+  .event-typetab-btn::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+    background: var(--gold); opacity: 0; transition: opacity .2s;
+  }
+  .event-typetab-btn.active::after { opacity: 1; }
+  .event-typepanel { display: none; }
+  .event-typepanel.active { display: block; }
   .event-subtabs { display: flex; gap: 8px; margin-bottom: 1.5rem; }
   .event-subtab-btn {
     background: none; border: 1px solid var(--hairline-strong); cursor: pointer;
@@ -482,29 +500,51 @@ function renderEventList(events){
 
 function renderEvents(){
   if(!eventsData) return;
-  const { thisMonth, nextMonth } = eventsData;
-  const html = `
+  const { offline, online } = eventsData;
+
+  function renderTypePanel(prefix, data){
+    return `
     <div class="event-subtabs">
-      <button class="event-subtab-btn active" id="subTabThis" onclick="switchEventSubTab('this')">${thisMonth.month||'-'}月</button>
-      <button class="event-subtab-btn" id="subTabNext" onclick="switchEventSubTab('next')">${nextMonth.month||'-'}月</button>
+      <button class="event-subtab-btn active" id="subTab_${prefix}_this" onclick="switchEventSubTab('${prefix}','this')">${data.thisMonth.month||'-'}月</button>
+      <button class="event-subtab-btn" id="subTab_${prefix}_next" onclick="switchEventSubTab('${prefix}','next')">${data.nextMonth.month||'-'}月</button>
     </div>
-    <div class="event-subpanel active" id="subPanelThis">
-      <div class="event-month-label"><span class="num">${thisMonth.month||'-'}</span><span>月の交流会</span></div>
-      ${renderEventList(thisMonth.events)}
+    <div class="event-subpanel active" id="subPanel_${prefix}_this">
+      <div class="event-month-label"><span class="num">${data.thisMonth.month||'-'}</span><span>月の交流会</span></div>
+      ${renderEventList(data.thisMonth.events)}
     </div>
-    <div class="event-subpanel" id="subPanelNext">
-      <div class="event-month-label"><span class="num">${nextMonth.month||'-'}</span><span>月の交流会</span></div>
-      ${renderEventList(nextMonth.events)}
+    <div class="event-subpanel" id="subPanel_${prefix}_next">
+      <div class="event-month-label"><span class="num">${data.nextMonth.month||'-'}</span><span>月の交流会</span></div>
+      ${renderEventList(data.nextMonth.events)}
+    </div>`;
+  }
+
+  const html = `
+    <div class="event-typetabs">
+      <button class="event-typetab-btn active" id="typeTabOffline" onclick="switchEventTypeTab('offline')">オフライン</button>
+      <button class="event-typetab-btn" id="typeTabOnline" onclick="switchEventTypeTab('online')">オンライン</button>
+    </div>
+    <div class="event-typepanel active" id="typePanelOffline">
+      ${renderTypePanel('offline', offline)}
+    </div>
+    <div class="event-typepanel" id="typePanelOnline">
+      ${renderTypePanel('online', online)}
     </div>
   `;
   document.getElementById('eventsContent').innerHTML = html;
 }
 
-function switchEventSubTab(which){
-  document.getElementById('subTabThis').classList.toggle('active', which==='this');
-  document.getElementById('subTabNext').classList.toggle('active', which==='next');
-  document.getElementById('subPanelThis').classList.toggle('active', which==='this');
-  document.getElementById('subPanelNext').classList.toggle('active', which==='next');
+function switchEventTypeTab(which){
+  document.getElementById('typeTabOffline').classList.toggle('active', which==='offline');
+  document.getElementById('typeTabOnline').classList.toggle('active', which==='online');
+  document.getElementById('typePanelOffline').classList.toggle('active', which==='offline');
+  document.getElementById('typePanelOnline').classList.toggle('active', which==='online');
+}
+
+function switchEventSubTab(prefix, which){
+  document.getElementById(`subTab_${prefix}_this`).classList.toggle('active', which==='this');
+  document.getElementById(`subTab_${prefix}_next`).classList.toggle('active', which==='next');
+  document.getElementById(`subPanel_${prefix}_this`).classList.toggle('active', which==='this');
+  document.getElementById(`subPanel_${prefix}_next`).classList.toggle('active', which==='next');
 }
 
 async function login(){
