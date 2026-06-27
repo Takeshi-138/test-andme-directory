@@ -144,6 +144,84 @@
   }
   .logout-btn:hover { border-color: var(--gold); color: var(--gold); }
 
+  /* ── TABS ── */
+  .tabs { display: flex; gap: 2px; margin-bottom: 2rem; border-bottom: 1px solid var(--hairline); }
+  .tab-btn {
+    background: none; border: none; cursor: pointer;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px; letter-spacing: 0.05em;
+    color: var(--text-muted);
+    padding: 12px 22px 14px;
+    position: relative;
+    transition: color .2s;
+  }
+  .tab-btn.active { color: var(--gold); }
+  .tab-btn::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+    background: var(--gold); opacity: 0; transition: opacity .2s;
+  }
+  .tab-btn.active::after { opacity: 1; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .event-month-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px; font-weight: 500; letter-spacing: 0.03em;
+    color: var(--gold); margin-bottom: 1.25rem;
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .event-month-label .num { font-size: 30px; }
+  .event-section { margin-bottom: 2.5rem; }
+  .event-subtabs { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+  .event-subtab-btn {
+    background: none; border: 1px solid var(--hairline-strong); cursor: pointer;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px; letter-spacing: 0.04em;
+    color: var(--text-muted);
+    padding: 8px 20px;
+    border-radius: 3px;
+    transition: all .2s;
+  }
+  .event-subtab-btn.active { color: var(--bg); background: var(--gold); border-color: var(--gold); }
+  .event-subpanel { display: none; }
+  .event-subpanel.active { display: block; }
+  .event-list { display: flex; flex-direction: column; gap: 1px; border: 1px solid var(--hairline); border-radius: 4px; overflow: hidden; background: var(--hairline); }
+  .event-card {
+    background: var(--surface);
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    gap: 1.5rem;
+    transition: background .18s;
+  }
+  .event-card:hover { background: var(--surface-raised); }
+  .event-date-block {
+    flex-shrink: 0; width: 92px;
+    text-align: center;
+    border-right: 1px solid var(--hairline);
+    padding-right: 1.25rem;
+  }
+  .event-date-day { font-family: 'Noto Sans JP', sans-serif; font-size: 26px; font-weight: 500; color: var(--text); line-height: 1.1; }
+  .event-date-weekday { font-size: 11px; color: var(--text-muted); letter-spacing: 0.05em; margin-top: 2px; }
+  .event-date-time { font-size: 11px; color: var(--gold); letter-spacing: 0.03em; margin-top: 8px; }
+  .event-info { flex: 1; min-width: 0; }
+  .event-name { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 500; letter-spacing: 0.02em; margin-bottom: 6px; }
+  .event-desc { font-size: 12.5px; color: var(--text-muted); line-height: 1.7; margin-bottom: 12px; }
+  .event-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11.5px; letter-spacing: 0.08em;
+    padding: 8px 18px;
+    border: 1px solid var(--gold); color: var(--gold);
+    border-radius: 3px; text-decoration: none;
+    transition: background .2s, color .2s;
+  }
+  .event-link:hover { background: var(--gold); color: var(--bg); }
+
+  @media (max-width: 600px) {
+    .event-card { flex-direction: column; gap: .75rem; }
+    .event-date-block { width: auto; border-right: none; border-bottom: 1px solid var(--hairline); padding-right: 0; padding-bottom: .75rem; display: flex; align-items: baseline; gap: 10px; text-align: left; }
+    .event-date-time { margin-top: 0; margin-left: auto; }
+  }
+
   .main { padding: 2rem; max-width: 1140px; margin: 0 auto; }
 
   .stats { display: flex; gap: 1px; margin-bottom: 2rem; border: 1px solid var(--hairline); border-radius: 4px; overflow: hidden; }
@@ -307,19 +385,30 @@
     <button class="logout-btn" onclick="logout()">ログアウト</button>
   </header>
   <div class="main">
-    <div class="stats">
-      <div class="stat"><div class="stat-label">総メンバー</div><div class="stat-val" id="totalCount">–</div></div>
-      <div class="stat"><div class="stat-label">表示中</div><div class="stat-val" id="showCount">–</div></div>
-      <div class="stat"><div class="stat-label">都道府県</div><div class="stat-val" id="prefCount">–</div></div>
-      <div class="stat"><div class="stat-label">業界数</div><div class="stat-val" id="industryCount">–</div></div>
+    <div class="tabs">
+      <button class="tab-btn active" id="tabBtnMembers" onclick="switchTab('members')">会員一覧</button>
+      <button class="tab-btn" id="tabBtnEvents" onclick="switchTab('events')">交流会</button>
     </div>
-    <div class="controls">
-      <input id="searchInput" placeholder="名前・業界・職種・事業内容で検索…" oninput="renderGrid()"/>
-      <select id="prefFilter" onchange="renderGrid()"><option value="">都道府県（全て）</option></select>
-      <select id="attrFilter" onchange="renderGrid()"><option value="">属性（全て）</option></select>
-      <select id="industryFilter" onchange="renderGrid()"><option value="">業界（全て）</option></select>
+
+    <div class="tab-panel active" id="panelMembers">
+      <div class="stats">
+        <div class="stat"><div class="stat-label">総メンバー</div><div class="stat-val" id="totalCount">–</div></div>
+        <div class="stat"><div class="stat-label">表示中</div><div class="stat-val" id="showCount">–</div></div>
+        <div class="stat"><div class="stat-label">都道府県</div><div class="stat-val" id="prefCount">–</div></div>
+        <div class="stat"><div class="stat-label">業界数</div><div class="stat-val" id="industryCount">–</div></div>
+      </div>
+      <div class="controls">
+        <input id="searchInput" placeholder="名前・業界・職種・事業内容で検索…" oninput="renderGrid()"/>
+        <select id="prefFilter" onchange="renderGrid()"><option value="">都道府県（全て）</option></select>
+        <select id="attrFilter" onchange="renderGrid()"><option value="">属性（全て）</option></select>
+        <select id="industryFilter" onchange="renderGrid()"><option value="">業界（全て）</option></select>
+      </div>
+      <div id="grid" class="grid"><div class="loading">読み込み中…</div></div>
     </div>
-    <div id="grid" class="grid"><div class="loading">読み込み中…</div></div>
+
+    <div class="tab-panel" id="panelEvents">
+      <div id="eventsContent"><div class="loading">読み込み中…</div></div>
+    </div>
   </div>
 </div>
 
@@ -335,6 +424,88 @@
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxeZXJ0NYnkTTSr_O0Bg1JH_XLdLRKCScwQzeyO1XsgdpYIs4M4QCThi0bD1GTQgz6h5w/exec';
 
 let allData = [];
+let eventsData = null;
+let eventsLoaded = false;
+
+function switchTab(tab){
+  document.getElementById('tabBtnMembers').classList.toggle('active', tab==='members');
+  document.getElementById('tabBtnEvents').classList.toggle('active', tab==='events');
+  document.getElementById('panelMembers').classList.toggle('active', tab==='members');
+  document.getElementById('panelEvents').classList.toggle('active', tab==='events');
+  if(tab==='events' && !eventsLoaded){ loadEvents(); }
+}
+
+async function loadEvents(){
+  try{
+    const res = await fetch(GAS_URL, {
+      method:'POST',
+      body: JSON.stringify({action:'getEvents'})
+    });
+    const data = await res.json();
+    if(data.success){
+      eventsData = data;
+      eventsLoaded = true;
+      renderEvents();
+    } else {
+      document.getElementById('eventsContent').innerHTML = '<div class="empty">交流会情報の読み込みに失敗しました</div>';
+    }
+  } catch(e){
+    document.getElementById('eventsContent').innerHTML = '<div class="empty">交流会情報の読み込みに失敗しました</div>';
+  }
+}
+
+function renderEventList(events){
+  if(!events || !events.length) return '<div class="empty">予定されている交流会はありません</div>';
+  return `<div class="event-list">${events.map(ev=>{
+    const date = ev['日付']||'';
+    const weekday = ev['曜日']||'';
+    const start = ev['開始時間']||'';
+    const end = ev['終了時間']||'';
+    const name = ev['交流会名']||'';
+    const desc = ev['交流会の説明']||'';
+    const url = ev['URL']||'';
+    const dayNum = String(date).match(/\d+/);
+    return `<div class="event-card">
+      <div class="event-date-block">
+        <div class="event-date-day">${dayNum?dayNum[0]:date}</div>
+        <div class="event-date-weekday">${weekday}</div>
+        ${start?`<div class="event-date-time">${start}${end?'〜'+end:''}</div>`:''}
+      </div>
+      <div class="event-info">
+        <div class="event-name">${name}</div>
+        ${desc?`<div class="event-desc">${desc}</div>`:''}
+        ${url?`<a class="event-link" href="${url}" target="_blank" rel="noopener">詳細・申し込み</a>`:''}
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function renderEvents(){
+  if(!eventsData) return;
+  const { thisMonth, nextMonth } = eventsData;
+  const html = `
+    <div class="event-subtabs">
+      <button class="event-subtab-btn active" id="subTabThis" onclick="switchEventSubTab('this')">${thisMonth.month||'-'}月</button>
+      <button class="event-subtab-btn" id="subTabNext" onclick="switchEventSubTab('next')">${nextMonth.month||'-'}月</button>
+    </div>
+    <div class="event-subpanel active" id="subPanelThis">
+      <div class="event-month-label"><span class="num">${thisMonth.month||'-'}</span><span>月の交流会</span></div>
+      ${renderEventList(thisMonth.events)}
+    </div>
+    <div class="event-subpanel" id="subPanelNext">
+      <div class="event-month-label"><span class="num">${nextMonth.month||'-'}</span><span>月の交流会</span></div>
+      ${renderEventList(nextMonth.events)}
+    </div>
+  `;
+  document.getElementById('eventsContent').innerHTML = html;
+}
+
+function switchEventSubTab(which){
+  document.getElementById('subTabThis').classList.toggle('active', which==='this');
+  document.getElementById('subTabNext').classList.toggle('active', which==='next');
+  document.getElementById('subPanelThis').classList.toggle('active', which==='this');
+  document.getElementById('subPanelNext').classList.toggle('active', which==='next');
+}
 
 async function login(){
   const pw = document.getElementById('passwordInput').value;
