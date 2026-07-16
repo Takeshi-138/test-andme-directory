@@ -200,14 +200,14 @@ header{background:#fff;border-bottom:2px solid var(--green);padding:1.1rem 2rem;
     <div class="stats">
       <div class="stat"><div class="stat-label">総登録者数</div><div class="stat-val" id="totalCount">–</div></div>
       <div class="stat"><div class="stat-label">表示中</div><div class="stat-val" id="showCount">–</div></div>
-      <div class="stat"><div class="stat-label">業種数</div><div class="stat-val" id="industryCount">–</div></div>
-      <div class="stat"><div class="stat-label">活動エリア</div><div class="stat-val" id="areaCount">–</div></div>
+      <div class="stat"><div class="stat-label">業界数</div><div class="stat-val" id="industryCount">–</div></div>
+      <div class="stat"><div class="stat-label">都道府県</div><div class="stat-val" id="areaCount">–</div></div>
     </div>
     <div class="controls">
-      <input id="searchInput" placeholder="名前・業種・事業内容・自己紹介で検索…" oninput="renderGrid()"/>
-      <select id="industryFilter" onchange="renderGrid()"><option value="">業種（全て）</option></select>
-      <select id="typeFilter" onchange="renderGrid()"><option value="">事業形態（全て）</option></select>
-      <select id="areaFilter" onchange="renderGrid()"><option value="">活動エリア（全て）</option></select>
+      <input id="searchInput" placeholder="名前・業界・職種・事業内容で検索…" oninput="renderGrid()"/>
+      <select id="industryFilter" onchange="renderGrid()"><option value="">業界（全て）</option></select>
+      <select id="typeFilter" onchange="renderGrid()"><option value="">属性（全て）</option></select>
+      <select id="areaFilter" onchange="renderGrid()"><option value="">都道府県（全て）</option></select>
     </div>
     <div id="grid" class="grid"><div class="loading">読み込み中…</div></div>
   </div>
@@ -292,13 +292,13 @@ async function loadMembers(){
 function populateFilters(){
   const industries=new Set(),types=new Set(),areas=new Set();
   allData.forEach(r=>{
-    if(r['業種'])industries.add(r['業種']);
-    if(r['事業形態'])types.add(r['事業形態']);
-    if(r['主な活動エリア'])areas.add(r['主な活動エリア']);
+    if(r['業界'])industries.add(r['業界']);
+    if(r['属性'])types.add(r['属性']);
+    if(r['都道府県'])areas.add(r['都道府県']);
   });
-  fillSelect('industryFilter',industries,'業種（全て）');
-  fillSelect('typeFilter',types,'事業形態（全て）');
-  fillSelect('areaFilter',areas,'活動エリア（全て）');
+  fillSelect('industryFilter',industries,'業界（全て）');
+  fillSelect('typeFilter',types,'属性（全て）');
+  fillSelect('areaFilter',areas,'都道府県（全て）');
   document.getElementById('totalCount').textContent=allData.length;
   document.getElementById('industryCount').textContent=industries.size;
   document.getElementById('areaCount').textContent=areas.size;
@@ -314,27 +314,25 @@ function renderGrid(){
   const type=document.getElementById('typeFilter').value;
   const area=document.getElementById('areaFilter').value;
   const f=allData.filter(r=>{
-    if(industry&&r['業種']!==industry)return false;
-    if(type&&r['事業形態']!==type)return false;
-    if(area&&r['主な活動エリア']!==area)return false;
-    if(q){const h=((r['苗字']||'')+(r['名前']||'')+(r['業種']||'')+(r['事業内容']||'')+(r['自己紹介文']||'')).toLowerCase();if(!h.includes(q))return false;}
+    if(industry&&r['業界']!==industry)return false;
+    if(type&&r['属性']!==type)return false;
+    if(area&&r['都道府県']!==area)return false;
+    if(q){const h=((r['氏名（カタカナ）']||'')+(r['業界']||'')+(r['職種']||'')+(r['事業内容']||'')).toLowerCase();if(!h.includes(q))return false;}
     return true;
   });
   document.getElementById('showCount').textContent=f.length;
   const grid=document.getElementById('grid');
   if(!f.length){grid.innerHTML='<div class="empty">該当する登録者が見つかりません</div>';return;}
   grid.innerHTML=f.map(r=>{
-    const name=(r['苗字']||'')+'　'+(r['名前']||'');
-    const kana=(r['苗字（フリガナ）']||'')+'　'+(r['名前（フリガナ）']||'');
+    const name=r['氏名（カタカナ）']||'名前なし';
+    const sub=[r['都道府県'],r['属性'],r['職種']].filter(Boolean).join(' / ');
     const tags=[];
-    if(r['業種'])tags.push(`<span class="tag industry">${r['業種']}</span>`);
-    if(r['事業形態'])tags.push(`<span class="tag type">${r['事業形態']}</span>`);
-    if(r['主な活動エリア'])tags.push(`<span class="tag area">${r['主な活動エリア']}</span>`);
+    if(r['業界'])tags.push(`<span class="tag industry">${r['業界']}</span>`);
+    if(r['属性'])tags.push(`<span class="tag type">${r['属性']}</span>`);
+    if(r['都道府県'])tags.push(`<span class="tag area">${r['都道府県']}</span>`);
     return`<div class="card" onclick="showModal(${allData.indexOf(r)})">
-      <div class="card-id">${r['会員ID']||''}</div>
       <div class="card-name">${name}</div>
-      <div class="card-name-kana">${kana}</div>
-      <div class="card-role">${[r['役職'],r['会社名・屋号']].filter(Boolean).join(' / ')||'　'}</div>
+      <div class="card-role">${sub||'　'}</div>
       ${tags.length?`<div class="tags">${tags.join('')}</div>`:''}
     </div>`;
   }).join('');
@@ -342,22 +340,16 @@ function renderGrid(){
 
 function showModal(idx){
   const r=allData[idx];
-  const name=(r['苗字']||'')+'　'+(r['名前']||'');
-  const kana=(r['苗字（フリガナ）']||'')+'　'+(r['名前（フリガナ）']||'');
+  const name=r['氏名（カタカナ）']||'名前なし';
   let html=`
-    <div class="modal-id">${r['会員ID']||''}</div>
     <div class="modal-name">${name}</div>
-    <div class="modal-name-kana">${kana}</div>
-    <div class="modal-role">${[r['役職'],r['会社名・屋号']].filter(Boolean).join(' / ')||'　'}</div>
+    <div class="modal-role">${[r['属性'],r['職種']].filter(Boolean).join(' / ')||'　'}</div>
     <div class="detail-section">
       <div class="detail-section-title">仕事・事業情報</div>
-      ${row('職業',r['職業'])}${row('業種',r['業種'])}${row('事業形態',r['事業形態'])}${row('事業内容',r['事業内容'])}${row('主な活動エリア',r['主な活動エリア'])}
+      ${row('都道府県',r['都道府県'])}${row('業界',r['業界'])}${row('職種',r['職種'])}${row('事業内容',r['事業内容'])}${row('副業内容',r['副業内容'])}${row('繋がりたい人脈',r['繋がりたい人脈'])}
     </div>`;
-  if(r['自己紹介文']){html+=`<div class="detail-section"><div class="detail-section-title">自己紹介</div><div style="font-size:13px;color:var(--text);line-height:1.9;white-space:pre-wrap">${r['自己紹介文']}</div></div>`;}
-  const contacts=[];
-  if(r['連絡先①種別']&&r['連絡先①URL'])contacts.push({label:r['連絡先①種別'],url:r['連絡先①URL']});
-  if(r['連絡先②種別']&&r['連絡先②URL'])contacts.push({label:r['連絡先②種別'],url:r['連絡先②URL']});
-  if(contacts.length){html+=`<div class="detail-section"><div class="detail-section-title">連絡先</div><div style="margin-top:.5rem">${contacts.map(c=>`<a class="contact-btn" href="${c.url}" target="_blank" rel="noopener">${c.label}</a>`).join('')}</div></div>`;}
+  const lineLink = r['LINEリンク']||'';
+  if(lineLink){html+=`<div class="detail-section"><div class="detail-section-title">連絡先</div><div style="margin-top:.5rem"><a class="contact-btn" href="${lineLink}" target="_blank" rel="noopener">LINE</a></div></div>`;}
   document.getElementById('modalContent').innerHTML=html;
   document.getElementById('modalBg').classList.add('open');
 }
