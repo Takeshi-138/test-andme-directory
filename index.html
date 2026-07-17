@@ -67,7 +67,6 @@ header{background:#fff;border-bottom:2px solid var(--green);padding:1.1rem 2rem;
 .controls input,.controls select{padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;background:#fff;color:var(--text);outline:none;transition:border-color .2s}
 .controls input{flex:2;min-width:200px}
 .controls select{flex:1;min-width:130px}
-.controls input#areaFilter{flex:1;min-width:130px}
 .controls input:focus,.controls select:focus{border-color:var(--green)}
 
 /* GRID */
@@ -210,8 +209,7 @@ header{background:#fff;border-bottom:2px solid var(--green);padding:1.1rem 2rem;
       <input id="searchInput" placeholder="名前・業界・職種・事業内容で検索…" oninput="renderGrid()"/>
       <select id="industryFilter" onchange="renderGrid()"><option value="">業界（全て）</option></select>
       <select id="typeFilter" onchange="renderGrid()"><option value="">属性（全て）</option></select>
-      <input list="areaFilterList" id="areaFilter" onchange="renderGrid()" oninput="renderGrid()" placeholder="都道府県（全て）" autocomplete="off"/>
-      <datalist id="areaFilterList"></datalist>
+      <select id="areaFilter" onchange="renderGrid()"><option value="">都道府県（全て）</option></select>
     </div>
     <div id="grid" class="grid"><div class="loading">読み込み中…</div></div>
   </div>
@@ -298,9 +296,9 @@ function sortPrefectures(areas){
   const arr=[...areas];
   arr.sort((a,b)=>{
     const ia=PREF_ORDER.indexOf(a), ib=PREF_ORDER.indexOf(b);
-    if(ia===-1 && ib===-1) return a.localeCompare(b,'ja'); // both unknown (e.g. 海外) - alphabetical among themselves
-    if(ia===-1) return 1;  // a unknown -> goes after known prefectures
-    if(ib===-1) return -1; // b unknown -> a comes first
+    if(ia===-1 && ib===-1) return a.localeCompare(b,'ja');
+    if(ia===-1) return 1;
+    if(ib===-1) return -1;
     return ia-ib;
   });
   return arr;
@@ -314,15 +312,15 @@ function populateFilters(){
   });
   fillSelect('industryFilter',industries,'業界（全て）');
   fillSelect('typeFilter',types,'属性（全て）');
-  fillDatalist('areaFilterList',sortPrefectures(areas));
+  fillSelectOrdered('areaFilter',sortPrefectures(areas),'都道府県（全て）');
   document.getElementById('totalCount').textContent=allData.length;
   document.getElementById('industryCount').textContent=industries.size;
   document.getElementById('areaCount').textContent=areas.size;
 }
-function fillDatalist(id,list){
+function fillSelectOrdered(id,list,ph){
   const el=document.getElementById(id);
-  el.innerHTML='';
-  list.forEach(v=>{const o=document.createElement('option');o.value=v;el.appendChild(o);});
+  el.innerHTML=`<option value="">${ph}</option>`;
+  list.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;el.appendChild(o);});
 }
 function fillSelect(id,set,ph){
   const el=document.getElementById(id);
