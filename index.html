@@ -65,8 +65,8 @@ header{background:#fff;border-bottom:2px solid var(--green);padding:1.1rem 2rem;
 /* CONTROLS */
 .controls{display:flex;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap}
 .controls input,.controls select{padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;background:#fff;color:var(--text);outline:none;transition:border-color .2s}
-.controls input{flex:2;min-width:200px}
-.controls select{flex:1;min-width:130px}
+.controls input{flex:1.4;min-width:180px}
+.controls select{flex:1;min-width:120px}
 .controls input:focus,.controls select:focus{border-color:var(--green)}
 
 /* GRID */
@@ -209,9 +209,10 @@ header{background:#fff;border-bottom:2px solid var(--green);padding:1.1rem 2rem;
     </div>
     <div class="controls">
       <input id="searchInput" placeholder="名前・業界・職種・事業内容で検索…" oninput="renderGrid()"/>
+      <select id="areaFilter" onchange="renderGrid()"><option value="">都道府県（全て）</option></select>
       <select id="industryFilter" onchange="renderGrid()"><option value="">業界（全て）</option></select>
       <select id="typeFilter" onchange="renderGrid()"><option value="">属性（全て）</option></select>
-      <select id="areaFilter" onchange="renderGrid()"><option value="">都道府県（全て）</option></select>
+      <select id="jobFilter" onchange="renderGrid()"><option value="">職種（全て）</option></select>
     </div>
     <div id="grid" class="grid"><div class="loading">読み込み中…</div></div>
   </div>
@@ -308,14 +309,16 @@ function sortPrefectures(areas){
   return arr;
 }
 function populateFilters(){
-  const industries=new Set(),types=new Set(),areas=new Set();
+  const industries=new Set(),types=new Set(),areas=new Set(),jobs=new Set();
   allData.forEach(r=>{
     if(r['業界'])industries.add(r['業界']);
     if(r['属性'])types.add(r['属性']);
     if(r['都道府県'])areas.add(r['都道府県']);
+    if(r['職種'])jobs.add(r['職種']);
   });
   fillSelect('industryFilter',industries,'業界（全て）');
   fillSelect('typeFilter',types,'属性（全て）');
+  fillSelect('jobFilter',jobs,'職種（全て）');
   fillSelectOrdered('areaFilter',sortPrefectures(areas),'都道府県（全て）');
   document.getElementById('totalCount').textContent=allData.length;
   document.getElementById('industryCount').textContent=industries.size;
@@ -335,10 +338,12 @@ function renderGrid(){
   const q=(document.getElementById('searchInput').value||'').toLowerCase();
   const industry=document.getElementById('industryFilter').value;
   const type=document.getElementById('typeFilter').value;
+  const job=document.getElementById('jobFilter').value;
   const area=document.getElementById('areaFilter').value;
   const f=allData.filter(r=>{
     if(industry&&r['業界']!==industry)return false;
     if(type&&r['属性']!==type)return false;
+    if(job&&r['職種']!==job)return false;
     if(area&&r['都道府県']!==area)return false;
     if(q){const h=((r['氏名（カタカナ）']||'')+(r['業界']||'')+(r['職種']||'')+(r['事業内容']||'')).toLowerCase();if(!h.includes(q))return false;}
     return true;
