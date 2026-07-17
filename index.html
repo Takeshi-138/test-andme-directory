@@ -87,6 +87,19 @@ header{background:#fff;border-bottom:2px solid var(--green);padding:1.1rem 2rem;
 .empty{text-align:center;padding:4rem;color:var(--text-muted);font-size:13px;background:var(--surface);border-radius:var(--radius)}
 .loading{text-align:center;padding:4rem;color:var(--text-muted);font-size:13px}
 
+/* VIEW TOGGLE + TABLE */
+.view-toggle-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:8px}
+.view-toggle{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:3px}
+.view-toggle-btn{background:none;border:none;cursor:pointer;font-size:12px;padding:7px 16px;border-radius:6px;color:var(--text-muted);font-family:inherit;transition:all .2s}
+.view-toggle-btn.active{background:var(--green);color:#fff;font-weight:700}
+.btn-download{font-size:12px;padding:8px 16px;border:1px solid var(--green);border-radius:var(--radius);background:#fff;color:var(--green);cursor:pointer;font-family:inherit;font-weight:700;transition:all .2s}
+.btn-download:hover{background:var(--green);color:#fff}
+.table-scroll{overflow:auto;border:1px solid var(--border);border-radius:var(--radius);max-height:70vh}
+#dataTable{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}
+#dataTable th{background:var(--surface);color:var(--text);font-weight:700;padding:10px 14px;text-align:left;position:sticky;top:0;border-bottom:2px solid var(--border);border-right:1px solid var(--border)}
+#dataTable td{padding:9px 14px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);color:var(--text-muted);max-width:260px;overflow:hidden;text-overflow:ellipsis}
+#dataTable tr:hover td{background:var(--surface)}
+
 /* MODAL */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center;padding:1rem}
 .modal-bg.open{display:flex}
@@ -164,6 +177,7 @@ header{background:#fff;border-bottom:2px solid var(--green);padding:1.1rem 2rem;
   .event-date-time{margin-top:0;margin-left:auto}
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -214,7 +228,15 @@ header{background:#fff;border-bottom:2px solid var(--green);padding:1.1rem 2rem;
       <select id="typeFilter" onchange="renderGrid()"><option value="">属性（全て）</option></select>
       <select id="jobFilter" onchange="renderGrid()"><option value="">職種（全て）</option></select>
     </div>
+    <div class="view-toggle-row">
+      <div class="view-toggle">
+        <button class="view-toggle-btn active" id="viewBtnCard" onclick="switchView('card')">カード表示</button>
+        <button class="view-toggle-btn" id="viewBtnTable" onclick="switchView('table')">表形式</button>
+      </div>
+      <button class="btn-download" id="downloadBtn" onclick="downloadXlsx()">⬇ xlsxダウンロード</button>
+    </div>
     <div id="grid" class="grid"><div class="loading">読み込み中…</div></div>
+    <div id="tableWrap" style="display:none"><div class="table-scroll"><table id="dataTable"></table></div></div>
   </div>
 
   <!-- 交流会 -->
@@ -246,7 +268,7 @@ header{background:#fff;border-bottom:2px solid var(--green);padding:1.1rem 2rem;
 
 <script>
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxeZXJ0NYnkTTSr_O0Bg1JH_XLdLRKCScwQzeyO1XsgdpYIs4M4QCThi0bD1GTQgz6h5w/exec';
-let allData=[], eventsData=null, eventsLoaded=false;
+let allData=[], eventsData=null, eventsLoaded=false, currentView='card';
 
 async function login(){
   const pw=document.getElementById('passwordInput').value;
@@ -334,6 +356,7 @@ function fillSelect(id,set,ph){
   el.innerHTML=`<option value="">${ph}</option>`;
   [...set].sort().forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;el.appendChild(o);});
 }
+let currentFiltered=[];
 function renderGrid(){
   const q=(document.getElementById('searchInput').value||'').toLowerCase();
   const industry=document.getElementById('industryFilter').value;
@@ -348,22 +371,54 @@ function renderGrid(){
     if(q){const h=((r['氏名（カタカナ）']||'')+(r['業界']||'')+(r['職種']||'')+(r['事業内容']||'')).toLowerCase();if(!h.includes(q))return false;}
     return true;
   });
+  currentFiltered=f;
   document.getElementById('showCount').textContent=f.length;
   const grid=document.getElementById('grid');
-  if(!f.length){grid.innerHTML='<div class="empty">該当する登録者が見つかりません</div>';return;}
-  grid.innerHTML=f.map(r=>{
-    const name=r['氏名（カタカナ）']||'名前なし';
-    const sub=[r['都道府県'],r['属性'],r['職種']].filter(Boolean).join(' / ');
-    const tags=[];
-    if(r['業界'])tags.push(`<span class="tag industry">${r['業界']}</span>`);
-    if(r['属性'])tags.push(`<span class="tag type">${r['属性']}</span>`);
-    if(r['都道府県'])tags.push(`<span class="tag area">${r['都道府県']}</span>`);
-    return`<div class="card" onclick="showModal(${allData.indexOf(r)})">
-      <div class="card-name">${name}</div>
-      <div class="card-role">${sub||'　'}</div>
-      ${tags.length?`<div class="tags">${tags.join('')}</div>`:''}
-    </div>`;
-  }).join('');
+  if(!f.length){grid.innerHTML='<div class="empty">該当する登録者が見つかりません</div>';}
+  else{
+    grid.innerHTML=f.map(r=>{
+      const name=r['氏名（カタカナ）']||'名前なし';
+      const sub=[r['都道府県'],r['属性'],r['職種']].filter(Boolean).join(' / ');
+      const tags=[];
+      if(r['業界'])tags.push(`<span class="tag industry">${r['業界']}</span>`);
+      if(r['属性'])tags.push(`<span class="tag type">${r['属性']}</span>`);
+      if(r['都道府県'])tags.push(`<span class="tag area">${r['都道府県']}</span>`);
+      return`<div class="card" onclick="showModal(${allData.indexOf(r)})">
+        <div class="card-name">${name}</div>
+        <div class="card-role">${sub||'\u3000'}</div>
+        ${tags.length?`<div class="tags">${tags.join('')}</div>`:''}
+      </div>`;
+    }).join('');
+  }
+  renderTable();
+}
+
+function switchView(which){
+  currentView=which;
+  document.getElementById('viewBtnCard').classList.toggle('active',which==='card');
+  document.getElementById('viewBtnTable').classList.toggle('active',which==='table');
+  document.getElementById('grid').style.display=which==='card'?'grid':'none';
+  document.getElementById('tableWrap').style.display=which==='table'?'block':'none';
+}
+
+function renderTable(){
+  const table=document.getElementById('dataTable');
+  if(!currentFiltered.length){table.innerHTML='<tr><td style="padding:2rem;color:var(--text-muted)">該当する登録者が見つかりません</td></tr>';return;}
+  const headers=Object.keys(currentFiltered[0]);
+  let html='<thead><tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>';
+  html+=currentFiltered.map(r=>'<tr>'+headers.map(h=>`<td title="${(r[h]||'').toString().replace(/"/g,'&quot;')}">${r[h]||''}</td>`).join('')+'</tr>').join('');
+  html+='</tbody>';
+  table.innerHTML=html;
+}
+
+function downloadXlsx(){
+  if(!currentFiltered.length){alert('ダウンロードできるデータがありません');return;}
+  const ws=XLSX.utils.json_to_sheet(currentFiltered);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'登録者データ');
+  const today=new Date();
+  const ymd=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+  XLSX.writeFile(wb,`AndMe_登録者データ_${ymd}.xlsx`);
 }
 
 function showModal(idx){
@@ -377,7 +432,14 @@ function showModal(idx){
       ${row('都道府県',r['都道府県'])}${row('業界',r['業界'])}${row('職種',r['職種'])}${row('事業内容',r['事業内容'])}${row('副業内容',r['副業内容'])}${row('繋がりたい人脈',r['繋がりたい人脈'])}
     </div>`;
   const lineLink = r['LINEリンク']||'';
-  if(lineLink){html+=`<div class="detail-section"><div class="detail-section-title">連絡先</div><div style="margin-top:.5rem"><a class="contact-btn line-btn" href="${lineLink}" target="_blank" rel="noopener">LINEで繋がる</a></div></div>`;}
+  if(lineLink){
+    const isUrl = /^https?:\/\//i.test(lineLink.trim());
+    if(isUrl){
+      html+=`<div class="detail-section"><div class="detail-section-title">連絡先</div><div style="margin-top:.5rem"><a class="contact-btn line-btn" href="${lineLink}" target="_blank" rel="noopener">LINEで繋がる</a></div></div>`;
+    } else {
+      html+=`<div class="detail-section"><div class="detail-section-title">連絡先（LINE）</div><div class="detail-row"><span class="detail-val">${lineLink}</span></div></div>`;
+    }
+  }
   document.getElementById('modalContent').innerHTML=html;
   document.getElementById('modalBg').classList.add('open');
 }
