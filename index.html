@@ -434,14 +434,16 @@ function renderEventList(events,colorClass){
   if(!events||!events.length)return'<div class="empty">予定されている交流会はありません</div>';
   const linkColor = colorClass==='offline' ? 'var(--coral)' : 'var(--blue)';
   return`<div class="event-list">${events.map(ev=>{
-    const dayNum=String(ev['日付']||'').match(/\d+/);
+    const dateStr=String(ev['日付']||'');
+    const dateMatch=dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/); // yyyy-MM-dd 形式から日だけ抽出
+    const dayDisplay=dateMatch?String(parseInt(dateMatch[3],10)):dateStr;
     const capVal = ev['定員'];
     const cap = (capVal!==''&&capVal!==null&&capVal!==undefined) ? `<span class="badge">定員 ${capVal}${String(capVal).includes('名')?'':'名'}</span>` : '';
     const priceText = formatPrice(ev['参加費']);
     const price = (priceText!=='') ? `<span class="badge price ${colorClass==='online'?'online-color':''}">${priceText}</span>` : '';
     return`<div class="event-card">
       <div class="event-date-block">
-        <div class="event-date-day">${dayNum?dayNum[0]:ev['日付']||''}</div>
+        <div class="event-date-day">${dayDisplay}</div>
         <div class="event-date-weekday">${ev['曜日']||''}</div>
         ${ev['開始時間']?`<div class="event-date-time ${colorClass}-color">${ev['開始時間']}${ev['終了時間']?'〜'+ev['終了時間']:''}</div>`:''}
       </div>
