@@ -435,9 +435,10 @@ function renderEventList(events,colorClass){
   const linkColor = colorClass==='offline' ? 'var(--coral)' : 'var(--blue)';
   return`<div class="event-list">${events.map(ev=>{
     const dayNum=String(ev['日付']||'').match(/\d+/);
-    const cap = ev['定員'] ? `<span class="badge">定員 ${ev['定員']}${String(ev['定員']).includes('名')?'':'名'}</span>` : '';
+    const capVal = ev['定員'];
+    const cap = (capVal!==''&&capVal!==null&&capVal!==undefined) ? `<span class="badge">定員 ${capVal}${String(capVal).includes('名')?'':'名'}</span>` : '';
     const priceText = formatPrice(ev['参加費']);
-    const price = priceText ? `<span class="badge price ${colorClass==='online'?'online-color':''}">${priceText}</span>` : '';
+    const price = (priceText!=='') ? `<span class="badge price ${colorClass==='online'?'online-color':''}">${priceText}</span>` : '';
     return`<div class="event-card">
       <div class="event-date-block">
         <div class="event-date-day">${dayNum?dayNum[0]:ev['日付']||''}</div>
