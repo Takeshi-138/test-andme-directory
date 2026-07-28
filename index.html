@@ -418,13 +418,26 @@ function renderEvents(){
     <div class="event-typepanel active" id="typePanelOffline">${renderTypePanel('offline',offline,'offline')}</div>
     <div class="event-typepanel" id="typePanelOnline">${renderTypePanel('online',online,'online')}</div>`;
 }
+function formatPrice(val){
+  if(val===''||val===null||val===undefined)return '';
+  const s=String(val).trim();
+  // 完全に数字だけ（カンマ・円などが含まれない）場合のみ自動整形する
+  if(/^\d+$/.test(s)){
+    const num=parseInt(s,10);
+    if(num===0)return '無料';
+    return num.toLocaleString('ja-JP')+'円';
+  }
+  // すでに「円」「無料」などの文字が含まれる場合はそのまま表示
+  return s;
+}
 function renderEventList(events,colorClass){
   if(!events||!events.length)return'<div class="empty">予定されている交流会はありません</div>';
   const linkColor = colorClass==='offline' ? 'var(--coral)' : 'var(--blue)';
   return`<div class="event-list">${events.map(ev=>{
     const dayNum=String(ev['日付']||'').match(/\d+/);
     const cap = ev['定員'] ? `<span class="badge">定員 ${ev['定員']}${String(ev['定員']).includes('名')?'':'名'}</span>` : '';
-    const price = ev['参加費'] ? `<span class="badge price ${colorClass==='online'?'online-color':''}">${ev['参加費']}</span>` : '';
+    const priceText = formatPrice(ev['参加費']);
+    const price = priceText ? `<span class="badge price ${colorClass==='online'?'online-color':''}">${priceText}</span>` : '';
     return`<div class="event-card">
       <div class="event-date-block">
         <div class="event-date-day">${dayNum?dayNum[0]:ev['日付']||''}</div>
