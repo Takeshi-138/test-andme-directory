@@ -368,7 +368,7 @@ function showModal(idx){
     <div class="modal-role">${[r['属性'],r['職種']].filter(Boolean).join(' / ')||'　'}</div>
     <div class="detail-section">
       <div class="detail-section-title">仕事・事業情報</div>
-      ${row('都道府県',r['都道府県'])}${row('業界',r['業界'])}${row('職種',r['職種'])}${row('事業内容',r['事業内容'])}${row('副業内容',r['副業内容'])}${row('繋がりたい人脈',r['繋がりたい人脈'])}
+      ${row('年齢',r['年齢'])}${row('性別',r['性別'])}${row('都道府県',r['都道府県'])}${row('業界',r['業界'])}${row('職種',r['職種'])}${row('事業内容',r['事業内容'])}${row('副業内容',r['副業内容'])}${row('繋がりたい人脈',r['繋がりたい人脈'])}
     </div>`;
   const lineLink = r['LINEリンク']||'';
   if(lineLink){
@@ -382,7 +382,7 @@ function showModal(idx){
   document.getElementById('modalContent').innerHTML=html;
   document.getElementById('modalBg').classList.add('open');
 }
-function row(label,val){if(!val)return'';return`<div class="detail-row"><span class="detail-label">${label}</span><span class="detail-val">${val}</span></div>`;}
+function row(label,val){if(val===''||val===null||val===undefined)return'';return`<div class="detail-row"><span class="detail-label">${label}</span><span class="detail-val">${val}</span></div>`;}
 function closeModal(){document.getElementById('modalBg').classList.remove('open');}
 
 async function loadEvents(){
